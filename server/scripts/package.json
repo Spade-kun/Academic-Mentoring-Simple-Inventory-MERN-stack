@@ -1,0 +1,19 @@
+{
+  "name": "inventory-system",
+  "version": "1.0.0",
+  "description": "MERN Inventory System with Microservices",
+  "main": "index.js",
+  "scripts": {
+    "main": "cd ../main-service && npx nodemon server.js",
+    "products": "cd ../products-service && npx nodemon server.js",
+    "categories": "cd ../categories-service && npx nodemon server.js",
+    "suppliers": "cd ../suppliers-service && npx nodemon server.js",
+    "dev": "concurrently \"npm run main\" \"npm run products\" \"npm run categories\" \"npm run suppliers\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
