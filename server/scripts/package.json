@@ -8,12 +8,14 @@
     "products": "cd ../products-service && npx nodemon server.js",
     "categories": "cd ../categories-service && npx nodemon server.js",
     "suppliers": "cd ../suppliers-service && npx nodemon server.js",
-    "dev": "concurrently \"npm run main\" \"npm run products\" \"npm run categories\" \"npm run suppliers\""
+    "auth": "cd ../auth-service && npx nodemon server.js",
+    "dev": "concurrently --kill-others-on-fail \"npm run main\" \"npm run products\" \"npm run categories\" \"npm run suppliers\" \"npm run auth\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.10"
   }
 }

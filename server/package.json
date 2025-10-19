@@ -1,0 +1,17 @@
+{
+  "name": "mern-inventory-system",
+  "version": "1.0.0",
+  "description": "MERN Stack Inventory System with Microservices",
+  "main": "index.js",
+  "scripts": {
+    "start": "node scripts/start-services.js",
+    "dev": "concurrently \"cd main-service && npm run dev\" \"cd products-service && npm run dev\" \"cd categories-service && npm run dev\" \"cd suppliers-service && npm run dev\" \"cd auth-service && npm run dev\"",
+    "install-all": "concurrently \"cd main-service && npm install\" \"cd products-service && npm install\" \"cd categories-service && npm install\" \"cd suppliers-service && npm install\" \"cd auth-service && npm install\""
+  },
+  "keywords": ["mern", "microservices", "inventory"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
