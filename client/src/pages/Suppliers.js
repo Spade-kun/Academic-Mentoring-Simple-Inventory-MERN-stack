@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -15,9 +15,13 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Typography
+  Typography,
+  CircularProgress,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import supplierService from '../services/supplier.service';
 
 const Suppliers = () => {
   const [open, setOpen] = useState(false);
@@ -29,18 +33,34 @@ const Suppliers = () => {
     address: ''
   });
   const [editingId, setEditingId] = useState(null);
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  // Dummy data - will be replaced with API calls
-  const [suppliers] = useState([
-    {
-      id: 1,
-      name: 'Sample Supplier',
-      contact: 'John Doe',
-      email: 'john@supplier.com',
-      phone: '+1234567890',
-      address: '123 Supplier Street'
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
+
+  const fetchSuppliers = async () => {
+    try {
+      setLoading(true);
+      const data = await supplierService.getAll();
+      setSuppliers(data);
+    } catch (error) {
+      showSnackbar('Failed to fetch suppliers', 'error');
+      console.error('Error fetching suppliers:', error);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const handleOpen = (supplier = null) => {
     if (supplier) {
@@ -78,16 +98,44 @@ const Suppliers = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement create/update logic
-    handleClose();
+    try {
+      if (editingId) {
+        await supplierService.update(editingId, formData);
+        showSnackbar('Supplier updated successfully');
+      } else {
+        await supplierService.create(formData);
+        showSnackbar('Supplier created successfully');
+      }
+      fetchSuppliers();
+      handleClose();
+    } catch (error) {
+      showSnackbar(error.response?.data?.message || 'Operation failed', 'error');
+      console.error('Error saving supplier:', error);
+    }
   };
 
-  const handleDelete = (id) => {
-    // TODO: Implement delete logic
-    console.log('Delete supplier with id:', id);
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this supplier?')) {
+      try {
+        await supplierService.delete(id);
+        showSnackbar('Supplier deleted successfully');
+        fetchSuppliers();
+      } catch (error) {
+        showSnackbar(error.response?.data?.message || 'Failed to delete supplier', 'error');
+        console.error('Error deleting supplier:', error);
+      }
+    }
   };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -199,6 +247,17 @@ const Suppliers = () => {
           </DialogActions>
         </form>
       </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

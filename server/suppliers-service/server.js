@@ -39,17 +39,6 @@ app.get('/suppliers/:id', async (req, res) => {
     }
 });
 
-// Get single supplier
-app.get('/suppliers/:id', async (req, res) => {
-    try {
-        const supplier = await Supplier.findById(req.params.id);
-        if (!supplier) return res.status(404).json({ message: 'Supplier not found' });
-        res.json(supplier);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
 // Create supplier
 app.post('/suppliers', async (req, res) => {
     const supplier = new Supplier({
@@ -71,7 +60,7 @@ app.post('/suppliers', async (req, res) => {
 // Update supplier
 app.put('/suppliers/:id', async (req, res) => {
     try {
-        const supplier = await Supplier.findById(req.params.id);
+        const supplier = await Supplier.findOne({ id: parseInt(req.params.id) });
         if (!supplier) return res.status(404).json({ message: 'Supplier not found' });
 
         Object.assign(supplier, req.body);
@@ -85,10 +74,10 @@ app.put('/suppliers/:id', async (req, res) => {
 // Delete supplier
 app.delete('/suppliers/:id', async (req, res) => {
     try {
-        const supplier = await Supplier.findById(req.params.id);
+        const supplier = await Supplier.findOne({ id: parseInt(req.params.id) });
         if (!supplier) return res.status(404).json({ message: 'Supplier not found' });
 
-        await supplier.remove();
+        await supplier.deleteOne();
         res.json({ message: 'Supplier deleted' });
     } catch (error) {
         res.status(500).json({ message: error.message });

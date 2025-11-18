@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -16,9 +16,15 @@ import {
   TableRow,
   IconButton,
   Typography,
-  MenuItem
+  MenuItem,
+  CircularProgress,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import productService from '../services/product.service';
+import categoryService from '../services/category.service';
+import supplierService from '../services/supplier.service';
 
 const Products = () => {
   const [open, setOpen] = useState(false);
@@ -31,19 +37,42 @@ const Products = () => {
     supplier: ''
   });
   const [editingId, setEditingId] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  // Dummy data - will be replaced with API calls
-  const [products] = useState([
-    {
-      id: 1,
-      name: 'Sample Product',
-      description: 'Sample Description',
-      price: 99.99,
-      quantity: 100,
-      category: 'Electronics',
-      supplier: 'Sample Supplier'
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [productsData, categoriesData, suppliersData] = await Promise.all([
+        productService.getAll(),
+        categoryService.getAll(),
+        supplierService.getAll()
+      ]);
+      setProducts(productsData);
+      setCategories(categoriesData);
+      setSuppliers(suppliersData);
+    } catch (error) {
+      showSnackbar('Failed to fetch data', 'error');
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const handleOpen = (product = null) => {
     if (product) {
@@ -83,16 +112,44 @@ const Products = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement create/update logic
-    handleClose();
+    try {
+      if (editingId) {
+        await productService.update(editingId, formData);
+        showSnackbar('Product updated successfully');
+      } else {
+        await productService.create(formData);
+        showSnackbar('Product created successfully');
+      }
+      fetchData();
+      handleClose();
+    } catch (error) {
+      showSnackbar(error.response?.data?.message || 'Operation failed', 'error');
+      console.error('Error saving product:', error);
+    }
   };
 
-  const handleDelete = (id) => {
-    // TODO: Implement delete logic
-    console.log('Delete product with id:', id);
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      try {
+        await productService.delete(id);
+        showSnackbar('Product deleted successfully');
+        fetchData();
+      } catch (error) {
+        showSnackbar(error.response?.data?.message || 'Failed to delete product', 'error');
+        console.error('Error deleting product:', error);
+      }
+    }
   };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -201,9 +258,11 @@ const Products = () => {
               onChange={handleChange}
               required
             >
-              <MenuItem value="Electronics">Electronics</MenuItem>
-              <MenuItem value="Clothing">Clothing</MenuItem>
-              <MenuItem value="Food">Food</MenuItem>
+              {categories.map((cat) => (
+                <MenuItem key={cat.id} value={cat.name}>
+                  {cat.name}
+                </MenuItem>
+              ))}
             </TextField>
             <TextField
               margin="dense"
@@ -215,8 +274,11 @@ const Products = () => {
               onChange={handleChange}
               required
             >
-              <MenuItem value="Sample Supplier">Sample Supplier</MenuItem>
-              <MenuItem value="Another Supplier">Another Supplier</MenuItem>
+              {suppliers.map((sup) => (
+                <MenuItem key={sup.id} value={sup.name}>
+                  {sup.name}
+                </MenuItem>
+              ))}
             </TextField>
           </DialogContent>
           <DialogActions>
@@ -227,6 +289,17 @@ const Products = () => {
           </DialogActions>
         </form>
       </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

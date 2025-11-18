@@ -39,17 +39,6 @@ app.get('/categories/:id', async (req, res) => {
     }
 });
 
-// Get single category
-app.get('/categories/:id', async (req, res) => {
-    try {
-        const category = await Category.findById(req.params.id);
-        if (!category) return res.status(404).json({ message: 'Category not found' });
-        res.json(category);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
 // Create category
 app.post('/categories', async (req, res) => {
     const category = new Category({
@@ -68,7 +57,7 @@ app.post('/categories', async (req, res) => {
 // Update category
 app.put('/categories/:id', async (req, res) => {
     try {
-        const category = await Category.findById(req.params.id);
+        const category = await Category.findOne({ id: parseInt(req.params.id) });
         if (!category) return res.status(404).json({ message: 'Category not found' });
 
         Object.assign(category, req.body);
@@ -82,10 +71,10 @@ app.put('/categories/:id', async (req, res) => {
 // Delete category
 app.delete('/categories/:id', async (req, res) => {
     try {
-        const category = await Category.findById(req.params.id);
+        const category = await Category.findOne({ id: parseInt(req.params.id) });
         if (!category) return res.status(404).json({ message: 'Category not found' });
 
-        await category.remove();
+        await category.deleteOne();
         res.json({ message: 'Category deleted' });
     } catch (error) {
         res.status(500).json({ message: error.message });

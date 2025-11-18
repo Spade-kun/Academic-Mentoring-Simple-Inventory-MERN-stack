@@ -23,6 +23,7 @@ import {
   Business,
   Logout
 } from '@mui/icons-material';
+import { logout } from '../services/auth.service';
 
 const drawerWidth = 240;
 
@@ -47,7 +48,7 @@ const MainLayout = () => {
   };
 
   const handleLogout = () => {
-    // TODO: Implement logout logic
+    logout();
     navigate('/login');
   };
 

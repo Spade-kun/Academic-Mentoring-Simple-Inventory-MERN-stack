@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -15,9 +15,13 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Typography
+  Typography,
+  CircularProgress,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import categoryService from '../services/category.service';
 
 const Categories = () => {
   const [open, setOpen] = useState(false);
@@ -26,15 +30,34 @@ const Categories = () => {
     description: ''
   });
   const [editingId, setEditingId] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  // Dummy data - will be replaced with API calls
-  const [categories] = useState([
-    {
-      id: 1,
-      name: 'Electronics',
-      description: 'Electronic devices and accessories'
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const data = await categoryService.getAll();
+      setCategories(data);
+    } catch (error) {
+      showSnackbar('Failed to fetch categories', 'error');
+      console.error('Error fetching categories:', error);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const handleOpen = (category = null) => {
     if (category) {
@@ -66,16 +89,44 @@ const Categories = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement create/update logic
-    handleClose();
+    try {
+      if (editingId) {
+        await categoryService.update(editingId, formData);
+        showSnackbar('Category updated successfully');
+      } else {
+        await categoryService.create(formData);
+        showSnackbar('Category created successfully');
+      }
+      fetchCategories();
+      handleClose();
+    } catch (error) {
+      showSnackbar(error.response?.data?.message || 'Operation failed', 'error');
+      console.error('Error saving category:', error);
+    }
   };
 
-  const handleDelete = (id) => {
-    // TODO: Implement delete logic
-    console.log('Delete category with id:', id);
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this category?')) {
+      try {
+        await categoryService.delete(id);
+        showSnackbar('Category deleted successfully');
+        fetchCategories();
+      } catch (error) {
+        showSnackbar(error.response?.data?.message || 'Failed to delete category', 'error');
+        console.error('Error deleting category:', error);
+      }
+    }
   };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -153,6 +204,17 @@ const Categories = () => {
           </DialogActions>
         </form>
       </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
